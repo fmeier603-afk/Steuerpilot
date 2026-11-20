@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SteuerPilot Intern</title>
+<style>
+:root{
+  --bg:#f3f6fb;--surface:#fff;--sidebar:#101b33;--sidebar2:#182745;
+  --text:#172033;--muted:#667085;--line:#e4e9f1;--primary:#2563eb;
+  --primary-dark:#1d4ed8;--green:#15803d;--red:#b42318;--amber:#92400e;
+  --shadow:0 8px 28px rgba(16,24,40,.07);--radius:14px
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.45}
+.app{min-height:100vh}
+.sidebar{position:fixed;inset:0 auto 0 0;width:250px;background:var(--sidebar);color:#dbe6ff;padding:22px 16px;z-index:30;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:11px;padding:0 8px 22px}
+.brand-mark{display:grid;place-items:center;width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#60a5fa,#2563eb);color:white;font-size:21px;font-weight:800}
+.brand strong{display:block;color:#fff;font-size:17px}
+.brand small{color:#9fb1d2}
+.internal-badge{margin:0 8px 18px;padding:9px 11px;border:1px solid #34486d;border-radius:9px;color:#bfd0ee;font-size:12px;background:rgba(255,255,255,.03)}
+.nav{display:grid;gap:5px}
+.nav-item{border:0;background:transparent;color:#b9c8e4;text-align:left;padding:11px 13px;border-radius:9px;display:flex;gap:10px;align-items:center}
+.nav-item:hover{background:var(--sidebar2);color:#fff}
+.nav-item.active{background:#2563eb;color:#fff}
+.nav-icon{width:20px;text-align:center;font-size:16px}
+.sidebar-footer{margin-top:auto;padding:16px 8px 0;color:#8fa3c7;font-size:11px;border-top:1px solid #2b3c5c}
+.shell{margin-left:250px;min-height:100vh}
+.topbar{height:68px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:20;gap:15px}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
+.topbar-company{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;background:#eaf1ff;color:#2456b8;font-size:11px;font-weight:700;white-space:nowrap}
+.profile-select{display:flex;align-items:center;gap:8px;color:var(--muted);white-space:nowrap}
+.profile-select select{max-width:190px}
+.menu-btn{display:none;border:0;background:transparent;font-size:23px;color:var(--text)}
+main{padding:28px;max-width:1550px;margin:auto}
+.view{display:none}.view.active{display:block}
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:22px}
+h1{font-size:26px;line-height:1.2;margin:0 0 6px}h2{font-size:18px;margin:0 0 16px}h3{font-size:15px;margin:0 0 10px}
+p{margin:0 0 12px}.muted{color:var(--muted)}
+.actions{display:flex;gap:9px;flex-wrap:wrap}
+.btn,.primary,.danger{border:1px solid var(--line);background:#fff;color:var(--text);border-radius:9px;padding:9px 13px;font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+.btn:hover{background:#f8fafc}.primary{background:var(--primary);border-color:var(--primary);color:#fff}.primary:hover{background:var(--primary-dark)}
+.danger{color:var(--red);border-color:#f1c7c3}.danger:hover{background:#fff5f4}
+.small{padding:5px 8px;font-size:12px}.icon-btn{padding:5px 8px;min-width:32px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:20px}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.card-head h2{margin:0}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:20px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.kpi-label{color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.035em}
+.kpi-value{font-size:25px;font-weight:750;margin:8px 0 3px;letter-spacing:-.02em}.kpi-sub{font-size:12px;color:var(--muted)}
+.positive{color:var(--green)!important}.negative{color:var(--red)!important}
+.warning{padding:13px 15px;border:1px solid #f2d49b;background:#fffaf0;color:#78430b;border-radius:11px;margin-bottom:20px}
+.warning .actions{margin-top:10px}
+.info{padding:12px 14px;border-radius:10px;background:#eff6ff;color:#294a77;border:1px solid #d8e7fb}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;background:#fff}th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#f8fafc}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#fbfcfe}
+.num{text-align:right;font-variant-numeric:tabular-nums}.desc-cell{white-space:normal;min-width:190px;max-width:380px}
+.empty{text-align:center;color:var(--muted);padding:28px!important}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.filters input{min-width:240px;flex:1}
+input,select{width:100%;border:1px solid #ccd5e2;border-radius:8px;background:#fff;color:var(--text);padding:9px 10px;outline:none}
+input:focus,select:focus{border-color:#6b9ef8;box-shadow:0 0 0 3px rgba(37,99,235,.11)}
+label.field{display:grid;gap:6px;color:#475467;font-size:12px;font-weight:600}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.form-grid .full{grid-column:1/-1}
+.form-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
+.check{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:500;padding-top:25px}.check input{width:auto}
+.result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.result-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.result-row strong{text-align:right}.result-total{font-size:17px;border-bottom:0;padding-top:15px}
+.chart{width:100%;height:auto;min-height:190px}.legend{display:flex;gap:18px;color:var(--muted);font-size:12px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:60;display:none;align-items:center;justify-content:center;padding:20px}.modal.open{display:flex}.modal-box{background:#fff;width:min(650px,100%);max-height:92vh;overflow:auto;border-radius:16px;padding:23px;box-shadow:0 25px 70px rgba(0,0,0,.25)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.modal-head h2{margin:0}.close{border:0;background:transparent;font-size:25px;color:var(--muted)}
+.toast{position:fixed;right:22px;bottom:22px;background:#172033;color:#fff;padding:12px 17px;border-radius:10px;box-shadow:var(--shadow);z-index:100;opacity:0;transform:translateY(12px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:translateY(0)}
+.user-active{color:var(--primary);font-weight:700}.settings-section{border-top:1px solid var(--line);padding-top:20px;margin-top:20px}.settings-section:first-child{border-top:0;padding-top:0;margin-top:0}
+.report-title{border-bottom:2px solid var(--text);padding-bottom:15px;margin-bottom:20px}.report-meta{color:var(--muted)}
+code{background:#eef2f7;padding:2px 5px;border-radius:4px}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.grid-2{grid-template-columns:1fr}}
+@media(max-width:850px){
+  .sidebar{transform:translateX(-100%);transition:transform .2s}.sidebar.open{transform:translateX(0)}
+  .shell{margin-left:0}.menu-btn{display:block}.topbar{padding:0 16px}.profile-select>span{display:none}
+  main{padding:18px}.page-head{flex-direction:column}.grid-3{grid-template-columns:1fr}
+}
+@media(max-width:560px){.kpi-grid{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.result-grid{grid-template-columns:1fr}.topbar-company{max-width:145px}.profile-select select{max-width:120px}.card{padding:15px}}
+@media print{
+  body{background:#fff}.sidebar,.topbar,.no-print,.filters,.toast{display:none!important}.shell{margin:0}main{padding:0;max-width:none}
+  .view{display:none!important}.view.active{display:block!important}.card{box-shadow:none;break-inside:avoid}.page-head{margin-bottom:15px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div><strong>SteuerPilot</strong><small>Interne Auswertung</small></div>
+    </div>
+    <div class="internal-badge">Ausschließlich für interne Berechnungen.<br>Kein Ersatz für anerkannte Steuersoftware.</div>
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard"><span class="nav-icon">▦</span>Dashboard</button>
+      <button class="nav-item" data-view="bookings"><span class="nav-icon">≡</span>Buchungen</button>
+      <button class="nav-item" data-view="vat"><span class="nav-icon">%</span>USt-Auswertung</button>
+      <button class="nav-item" data-view="tax"><span class="nav-icon">∑</span>ESt-Schätzung</button>
+      <button class="nav-item" data-view="reports"><span class="nav-icon">▤</span>Berichte</button>
+      <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Einstellungen</button>
+    </nav>
+    <div class="sidebar-footer">Lokale Speicherung im Browser<br>Maximal 16 Profile · Version 1.0</div>
+  </aside>
+
+  <div class="shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuBtn" aria-label="Menü öffnen">☰</button>
+        <span class="topbar-company" id="topCompany"></span>
+        <span class="badge">NUR INTERN</span>
+      </div>
+      <label class="profile-select"><span>Aktives Profil</span><select id="userSelect" aria-label="Aktives Profil"></select></label>
+    </header>
+
+    <main>
+      <section class="view active" id="view-dashboard">
+        <div class="page-head">
+          <div><h1>Dashboard</h1><p class="muted" id="dashboardSub"></p></div>
+          <div class="actions no-print">
+            <button class="primary" data-action="new-tx">+ Neue Buchung</button>
+            <button class="btn" data-action="export-csv">CSV-Export</button>
+          </div>
+        </div>
+        <div id="demoBanner"></div>
+        <div class="warning">Die Ergebnisse sind vereinfachte interne Näherungen. Es erfolgen keine Plausibilitätsprüfung nach steuerlichen Vorgaben, keine ELSTER-Übermittlung und keine GoBD-konforme Aufbewahrung.</div>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">Einnahmen netto</div><div class="kpi-value positive" id="kpiIncome"></div><div class="kpi-sub">Ausgewähltes Wirtschaftsjahr</div></div>
+          <div class="kpi"><div class="kpi-label">Ausgaben netto</div><div class="kpi-value" id="kpiExpense"></div><div class="kpi-sub">Interne Netto-Sicht</div></div>
+          <div class="kpi"><div class="kpi-label">Ergebnis</div><div class="kpi-value" id="kpiProfit"></div><div class="kpi-sub">Einnahmen abzüglich Ausgaben</div></div>
+          <div class="kpi"><div class="kpi-label">USt-Saldo</div><div class="kpi-value" id="kpiVat"></div><div class="kpi-sub">USt abzüglich Vorsteuer</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Monatliche Ergebnisentwicklung</h2><div class="legend"><span><i class="dot" style="background:#2563eb"></i>positiv</span><span><i class="dot" style="background:#d92d20"></i>negativ</span></div></div>
+          <div id="monthlyChart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Letzte Buchungen</h2><button class="btn small no-print" data-view="bookings">Alle anzeigen</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th>Art</th><th class="num">Netto</th></tr></thead><tbody id="recentBody"></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-bookings">
+        <div class="page-head">
+          <div><h1>Buchungen</h1><p class="muted" id="bookingYearLabel"></p></div>
+          <div class="actions no-print"><button class="primary" data-action="new-tx">+ Neue Buchung</button><button class="btn" data-action="export-csv">Jahr als CSV</button></div>
+        </div>
+        <div class="card">
+          <div class="filters no-print">
+            <input id="bookingSearch" type="search" placeholder="Beschreibung oder Kategorie suchen …">
+            <select id="bookingKind" style="max-width:180px"><option value="all">Alle Arten</option><option value="income">Nur Einnahmen</option><option value="expense">Nur Ausgaben</option></select>
+          </div>
+          <p class="muted" id="bookingCount"></p>
+          <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th>Art</th><th class="num">Netto</th><th class="num">Satz</th><th class="num">USt/VSt</th><th class="num">Brutto</th><th class="no-print">Aktion</th></tr></thead><tbody id="bookingTableBody"></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-vat">
+        <div class="page-head">
+          <div><h1>USt-Auswertung</h1><p class="muted">Vereinfachte Zahlungsstromsicht auf Basis der erfassten Buchungen</p></div>
+          <select id="vatPeriod" style="max-width:210px">
+            <option value="year">Gesamtes Jahr</option><option value="q1">1. Quartal</option><option value="q2">2. Quartal</option><option value="q3">3. Quartal</option><option value="q4">4. Quartal</option>
+            <option value="m1">Januar</option><option value="m2">Februar</option><option value="m3">März</option><option value="m4">April</option><option value="m5">Mai</option><option value="m6">Juni</option><option value="m7">Juli</option><option value="m8">August</option><option value="m9">September</option><option value="m10">Oktober</option><option value="m11">November</option><option value="m12">Dezember</option>
+          </select>
+        </div>
+        <div class="info" style="margin-bottom:20px">Dies ist <strong>keine Umsatzsteuer-Voranmeldung</strong>. Soll-/Ist-Versteuerung, steuerfreie Umsätze, innergemeinschaftliche Leistungen, Reverse Charge, Anzahlungen und Korrekturen werden nicht eigenständig geprüft.</div>
+        <h2 id="vatPeriodLabel"></h2>
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+          <div class="kpi"><div class="kpi-label">Vereinnahmte USt</div><div class="kpi-value" id="vatOutput"></div><div class="kpi-sub">Aus Einnahmen berechnet</div></div>
+          <div class="kpi"><div class="kpi-label">Berechnete Vorsteuer</div><div class="kpi-value" id="vatInput"></div><div class="kpi-sub">Aus Ausgaben berechnet</div></div>
+          <div class="kpi"><div class="kpi-label">Saldo</div><div class="kpi-value" id="vatBalance"></div><div class="kpi-sub" id="vatBalanceHint"></div></div>
+        </div>
+        <div class="card"><h2>Aufstellung nach Steuersätzen</h2><div class="table-wrap"><table><thead><tr><th>Satz</th><th class="num">Einnahmen netto</th><th class="num">USt</th><th class="num">Ausgaben netto</th><th class="num">Vorsteuer</th></tr></thead><tbody id="vatRateBody"></tbody></table></div></div>
+      </section>
+
+      <section class="view" id="view-tax">
+        <div class="page-head"><div><h1>Einkommensteuer-Schätzung</h1><p class="muted">Tarifliche Näherung auf Basis eines bereits bekannten zu versteuernden Einkommens</p></div></div>
+        <div class="grid-2">
+          <div class="card">
+            <h2>Eingaben</h2>
+            <form id="taxForm">
+              <div class="form-grid">
+                <label class="field">Veranlagungsjahr<select id="taxYear"><option value="2024">2024</option><option value="2025">2025</option></select></label>
+                <label class="field">Kirchensteuersatz<select id="taxChurch"><option value="0">Keine Kirchensteuer</option><option value="8">8 %</option><option value="9">9 %</option></select></label>
+                <label class="field full">Zu versteuerndes Einkommen in Euro<input id="taxZve" type="number" min="0" step="1" required></label>
+                <label class="field full">Einbehaltene Lohnsteuer / ESt-Vorauszahlungen<input id="taxWithheld" inputmode="decimal" required></label>
+                <label class="check full"><input id="taxJoint" type="checkbox"> Zusammenveranlagung / Splittingtarif anwenden</label>
+              </div>
+              <div class="form-actions"><button class="primary" type="submit">Berechnen und speichern</button></div>
+            </form>
+          </div>
+          <div class="card">
+            <h2>Internes Ergebnis</h2>
+            <div class="result-row"><span>Tarifliche Einkommensteuer</span><strong id="taxEst"></strong></div>
+            <div class="result-row"><span>Solidaritätszuschlag, vereinfacht</span><strong id="taxSoli"></strong></div>
+            <div class="result-row"><span>Kirchensteuer, vereinfacht</span><strong id="taxChurchResult"></strong></div>
+            <div class="result-row result-total"><span>Gesamte Belastung</span><strong id="taxTotal"></strong></div>
+            <div class="result-row"><span>Durchschnittlicher ESt-Satz</span><strong id="taxAverage"></strong></div>
+            <div class="result-row"><span id="taxBalanceLabel">Grober Saldo</span><strong id="taxBalance"></strong></div>
+          </div>
+        </div>
+        <div class="warning">Hinterlegt sind §-32a-Parameter für 2024 und 2025. Nicht abgebildet werden unter anderem Verlustabzüge, Steuerermäßigungen, Kinder, Freibeträge, besondere Tarife, anrechenbare Steuern und zahlreiche Einzelfallregeln. Der Saldo ist besonders grob, da einbehaltene Soli-/Kirchensteuerbeträge nicht separat abgefragt werden.</div>
+      </section>
+
+      <section class="view" id="view-reports">
+        <div class="page-head">
+          <div><h1>Interner Jahresbericht</h1><p class="muted">EÜR-Annäherung und USt-Übersicht</p></div>
+          <button class="btn no-print" data-action="print">Drucken / als PDF speichern</button>
+        </div>
+        <div class="card">
+          <div class="report-title"><h1 id="reportCompany"></h1><div class="report-meta" id="reportMeta"></div></div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-label">Einnahmen netto</div><div class="kpi-value" id="reportIncome"></div></div>
+            <div class="kpi"><div class="kpi-label">Ausgaben netto</div><div class="kpi-value" id="reportExpense"></div></div>
+            <div class="kpi"><div class="kpi-label">Ergebnisannahme</div><div class="kpi-value" id="reportProfit"></div></div>
+            <div class="kpi"><div class="kpi-label">USt-Saldo</div><div class="kpi-value" id="reportVat"></div></div>
+          </div>
+          <div class="grid-2">
+            <div><h2>Einnahmen nach Kategorien</h2><div class="table-wrap"><table><thead><tr><th>Kategorie</th><th class="num">Netto</th></tr></thead><tbody id="reportIncomeCategories"></tbody></table></div></div>
+            <div><h2>Ausgaben nach Kategorien</h2><div class="table-wrap"><table><thead><tr><th>Kategorie</th><th class="num">Netto</th></tr></thead><tbody id="reportExpenseCategories"></tbody></table></div></div>
+          </div>
+          <div class="warning" style="margin-top:20px;margin-bottom:0">Interne Netto- und Zahlungsstromdarstellung. Keine formelle Einnahmenüberschussrechnung, keine Bilanz und keine Steuererklärung.</div>
+        </div>
+      </section>
+
+      <section class="view" id="view-settings">
+        <div class="page-head"><div><h1>Einstellungen & Datensicherung</h1><p class="muted">Stammdaten, lokale Profile und Datenaustausch</p></div></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="settings-section">
+              <h2>Arbeitsbereich</h2>
+              <form id="settingsForm">
+                <div class="form-grid">
+                  <label class="field full">Interne Bezeichnung<input id="settingsCompany" maxlength="100" required></label>
+                  <label class="field">Auswertungsjahr<input id="settingsYear" type="number" min="2000" max="2100" required></label>
+                </div>
+                <div class="form-actions"><button class="primary" type="submit">Einstellungen speichern</button></div>
+              </form>
+            </div>
+            <div class="settings-section">
+              <h2>Datensicherung</h2>
+              <p class="muted">Das JSON-Backup enthält alle lokalen Profile und deren Arbeitsbereiche.</p>
+              <div class="actions"><button class="btn" data-action="export-backup">JSON-Backup exportieren</button><button class="btn" data-action="import-backup">Backup importieren</button></div>
+            </div>
+            <div class="settings-section">
+              <h2>Demo und Zurücksetzen</h2>
+              <div class="actions"><button class="btn" data-action="load-demo">Demo-Daten laden</button><button class="danger" data-action="clear-workspace">Aktiven Arbeitsbereich leeren</button></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Lokale Nutzerprofile</h2><span class="badge" id="userCount"></span></div>
+            <p class="muted">Jedes Profil besitzt einen getrennten Datenbestand. Profile sind keine sicheren Benutzerkonten und bieten keine gleichzeitige Mehrplatznutzung.</p>
+            <form id="addUserForm">
+              <div class="form-grid">
+                <label class="field">Name<input id="newUserName" maxlength="60" placeholder="Neues Profil" required></label>
+                <label class="field">Rollenkennzeichnung<select id="newUserRole"><option value="Nutzer">Nutzer</option><option value="Admin">Admin</option></select></label>
+              </div>
+              <div class="form-actions"><button class="primary" type="submit">Profil anlegen</button></div>
+            </form>
+            <div class="table-wrap" style="margin-top:18px"><table><thead><tr><th>Profil</th><th>Rolle</th><th>Aktion</th></tr></thead><tbody id="userList"></tbody></table></div>
+          </div>
+        </div>
+        <div class="info"><strong>Speicherhinweis:</strong> Die Daten liegen ausschließlich im <code>localStorage</code> dieses Browsers. Browserdaten löschen, private Fenster oder ein Wechsel des Browserprofils können den Zugriff verhindern. Deshalb regelmäßig JSON-Backups erstellen.</div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="modal" id="txModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-head"><h2 id="txModalTitle">Neue Buchung</h2><button class="close" data-action="close-modal" aria-label="Schließen">×</button></div>
+    <form id="txForm">
+      <input type="hidden" id="txId">
+      <div class="form-grid">
+        <label class="field">Datum<input id="txDate" type="date" required></label>
+        <label class="field">Buchungsart<select id="txKind"><option value="income">Einnahme</option><option value="expense">Ausgabe</option></select></label>
+        <label class="field full">Beschreibung<input id="txDescription" maxlength="160" placeholder="z. B. Beratungsleistung Kunde A" required></label>
+        <label class="field">Kategorie<input id="txCategory" list="categoryList" maxlength="80" placeholder="z. B. Leistungen" required></label>
+        <datalist id="categoryList"><option value="Leistungen"><option value="Warenverkauf"><option value="Sonstige Einnahmen"><option value="Raumkosten"><option value="Software"><option value="Reisekosten"><option value="Versicherungen"><option value="Marketing"><option value="Bürobedarf"><option value="Sonstige Ausgaben"></datalist>
+        <label class="field">Nettobetrag in Euro<input id="txNet" inputmode="decimal" placeholder="0,00" required></label>
+        <label class="field">Steuersatz<select id="txVat"><option value="19">19 %</option><option value="7">7 %</option><option value="0">0 % / nicht belegt</option></select></label>
+      </div>
+      <p class="muted" style="margin-top:15px">Beträge werden positiv erfasst; die Buchungsart bestimmt Einnahme oder Ausgabe. USt/Vorsteuer wird intern aus dem Nettobetrag berechnet und kaufmännisch gerundet.</p>
+      <div class="form-actions"><button class="btn" type="button" data-action="close-modal">Abbrechen</button><button class="primary" type="submit">Buchung speichern</button></div>
+    </form>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+
+const STORAGE_KEY = "steuerpilot_intern_v1";
+const $ = id => document.getElementById(id);
+const euroCents = new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR"});
+const euroNumber = new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR"});
+const numberDE = new Intl.NumberFormat("de-DE");
+let bookingFilter = {q:"",kind:"all"};
+let vatPeriod = "year";
+let toastTimer;
+
+function uid(){return Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10)}
+function esc(value){return String(value ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function fmtCents(cents){return euroCents.format((Number(cents)||0)/100)}
+function fmtEuro(value){return euroNumber.format(Number(value)||0)}
+function clampInt(value,min,max,fallback){const n=Math.round(Number(value));return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback}
+function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),3200)}
+function parseMoney(value){
+  let s=String(value).trim().replace(/\s/g,"").replace(/€/g,"");
+  if(!s)return NaN;
+  if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");
+  const n=Number(s);
+  return Number.isFinite(n)?Math.round(n*100):NaN;
+}
+function moneyInput(cents){return ((Number(cents)||0)/100).toFixed(2).replace(".",",")}
+function fmtDate(date){const d=new Date(date+"T00:00:00");return isNaN(d)?date:d.toLocaleDateString("de-DE")}
+function txVat(tx){return Math.round(tx.netCents*tx.vatRate/100)}
+function txGross(tx){return tx.netCents+txVat(tx)}
+
+function demoTransactions(){
+  const rows=[
+    ["2025-01-08","income","Projektpauschale Kunde A","Leistungen",450000,19],
+    ["2025-01-15","expense","Büromiete Januar","Raumkosten",80000,19],
+    ["2025-02-05","income","Beratung Kunde B","Leistungen",320000,19],
+    ["2025-02-12","expense","Software-Abonnement","Software",14900,19],
+    ["2025-03-03","expense","Dienstreise","Reisekosten",22000,19],
+    ["2025-03-20","income","Workshop","Leistungen",180000,19],
+    ["2025-04-09","income","Projekt Kunde C","Leistungen",510000,19],
+    ["2025-04-18","expense","Betriebshaftpflicht","Versicherungen",18000,0],
+    ["2025-05-06","expense","Fachliteratur","Bürobedarf",12000,7],
+    ["2025-05-14","income","Supportpauschale","Leistungen",275000,19],
+    ["2025-06-02","income","Projekt Kunde D","Leistungen",630000,19],
+    ["2025-06-20","expense","Büroausstattung","Bürobedarf",34000,19],
+    ["2025-07-15","expense","Büromiete Juli","Raumkosten",80000,19],
+    ["2025-08-11","income","Analyse und Konzeption","Leistungen",420000,19],
+    ["2025-09-09","expense","Online-Werbung","Marketing",95000,19],
+    ["2025-10-16","income","Projekt Kunde E","Leistungen",560000,19],
+    ["2025-11-12","expense","Software-Abonnement","Software",14900,19]
+  ];
+  return rows.filter(r=>typeof r[1]==="string").map(r=>({id:uid(),date:r[0],kind:r[1],description:r[2],category:r[3],netCents:r[4],vatRate:r[5]}));
+}
+
+function newWorkspace(demo=false){
+  return {
+    settings:{company:demo?"Musterbetrieb – DEMO":"Mein Unternehmen (intern)",year:2025,demo},
+    transactions:demo?demoTransactions():[],
+    tax:{year:2025,zve:48000,joint:false,withheldCents:950000,churchRate:0}
+  };
+}
+function initialState(){
+  const id=uid();
+  return {version:1,activeUserId:id,users:[{id,name:"Administrator",role:"Admin"}],workspaces:{[id]:newWorkspace(true)}};
+}
+function normalizeWorkspace(w){
+  w=w&&typeof w==="object"?w:{};
+  const s=w.settings&&typeof w.settings==="object"?w.settings:{};
+  const t=w.tax&&typeof w.tax==="object"?w.tax:{};
+  const transactions=Array.isArray(w.transactions)?w.transactions.map(tx=>{
+    if(!tx||typeof tx!=="object")return null;
+    const rate=Number(tx.vatRate);
+    return {
+      id:String(tx.id||uid()),
+      date:/^\d{4}-\d{2}-\d{2}$/.test(tx.date)?tx.date:"2025-01-01",
+      kind:tx.kind==="expense"?"expense":"income",
+      description:String(tx.description||"Ohne Beschreibung").slice(0,160),
+      category:String(tx.category||"Sonstiges").slice(0,80),
+      netCents:clampInt(tx.netCents,0,1000000000000,0),
+      vatRate:[0,7,19].includes(rate)?rate:0
+    };
+  }).filter(Boolean):[];
+  const taxYear=Number(t.year),church=Number(t.churchRate);
+  return {
+    settings:{company:String(s.company||"Mein Unternehmen (intern)").slice(0,100),year:clampInt(s.year,2000,2100,2025),demo:Boolean(s.demo)},
+    transactions,
+    tax:{
+      year:[2024,2025].includes(taxYear)?taxYear:2025,
+      zve:clampInt(t.zve,0,1000000000,0),
+      joint:Boolean(t.joint),
+      withheldCents:clampInt(t.withheldCents,0,1000000000000,0),
+      churchRate:[0,8,9].includes(church)?church:0
+    }
+  };
+}
+function normalizeState(s){
+  if(!s||!Array.isArray(s.users)||!s.users.length)throw new Error("Ungültige Dateistruktur");
+  const users=s.users.slice(0,16).map(u=>({id:String(u.id||uid()),name:String(u.name||"Nutzer").slice(0,60),role:u.role==="Admin"?"Admin":"Nutzer"}));
+  const workspaces={};
+  users.forEach(u=>workspaces[u.id]=normalizeWorkspace(s.workspaces?s.workspaces[u.id]:null));
+  const active=users.some(u=>u.id===s.activeUserId)?s.activeUserId:users[0].id;
+  return {version:1,activeUserId:active,users,workspaces};
+}
+function loadState(){
+  try{const raw=localStorage.getItem(STORAGE_KEY);return raw?normalizeState(JSON.parse(raw)):initialState()}
+  catch(e){return initialState()}
+}
+let state=loadState();
+function ws(){return state.workspaces[state.activeUserId]}
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){toast("Speichern nicht möglich. Bitte JSON-Backup exportieren.")}}
+function yearTransactions(year=ws().settings.year){return ws().transactions.filter(tx=>tx.date.startsWith(year+"-"))}
+function totals(transactions){
+  const t={incomeNet:0,expenseNet:0,outputVat:0,inputVat:0,profit:0,vatBalance:0};
+  transactions.forEach(tx=>{
+    if(tx.kind==="income"){t.incomeNet+=tx.netCents;t.outputVat+=txVat(tx)}
+    else{t.expenseNet+=tx.netCents;t.inputVat+=txVat(tx)}
+  });
+  t.profit=t.incomeNet-t.expenseNet;t.vatBalance=t.outputVat-t.inputVat;
+  return t;
+}
+function setMetric(id,value){const el=$(id);el.textContent=fmtCents(value);el.classList.toggle("negative",value<0)}
+
+function renderDashboard(){
+  const w=ws(),year=w.settings.year,txs=yearTransactions(year),t=totals(txs);
+  $("dashboardSub").textContent=w.settings.company+" · Auswertungsjahr "+year+" · "+txs.length+" Buchungen";
+  setMetric("kpiIncome",t.incomeNet);setMetric("kpiExpense",t.expenseNet);setMetric("kpiProfit",t.profit);setMetric("kpiVat",t.vatBalance);
+  $("kpiProfit").classList.toggle("positive",t.profit>0);
+  const banner=$("demoBanner");
+  if(w.settings.demo){
+    banner.className="warning";
+    banner.innerHTML="<strong>Demo-Daten aktiv.</strong> Alle Beträge sind frei erfunden.<div class='actions no-print'><button class='btn small' data-action='clear-demo'>Demo-Daten entfernen</button></div>";
+  }else{banner.className="";banner.innerHTML=""}
+  const recent=[...txs].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
+  $("recentBody").innerHTML=recent.length?recent.map(tx=>`<tr><td>${fmtDate(tx.date)}</td><td class="desc-cell">${esc(tx.description)}</td><td>${esc(tx.category)}</td><td>${tx.kind==="income"?"Einnahme":"Ausgabe"}</td><td class="num ${tx.kind==="income"?"positive":""}">${tx.kind==="income"?"+":"−"} ${fmtCents(tx.netCents)}</td></tr>`).join(""):'<tr><td colspan="5" class="empty">Noch keine Buchungen im Auswertungsjahr.</td></tr>';
+  renderMonthlyChart(txs);
+}
+function renderMonthlyChart(txs){
+  const values=Array(12).fill(0);
+  txs.forEach(tx=>{const m=Number(tx.date.slice(5,7))-1;if(m>=0&&m<12)values[m]+=tx.kind==="income"?tx.netCents:-tx.netCents});
+  const max=Math.max(1,...values.map(Math.abs)),base=105,scale=72/max;
+  const months=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+  let svg='<svg class="chart" viewBox="0 0 760 205" role="img" aria-label="Monatliche Ergebnisse"><line x1="20" y1="105" x2="742" y2="105" stroke="#cbd5e1"/>';
+  values.forEach((v,i)=>{
+    const h=Math.abs(v)*scale,x=28+i*60,y=v>=0?base-h:base,color=v<0?"#d92d20":"#2563eb";
+    svg+=`<rect x="${x}" y="${y}" width="35" height="${v?Math.max(2,h):0}" rx="4" fill="${color}"><title>${months[i]}: ${esc(fmtCents(v))}</title></rect><text x="${x+17.5}" y="194" text-anchor="middle" fill="#667085" font-size="11">${months[i]}</text>`;
+  });
+  svg+="</svg>";$("monthlyChart").innerHTML=svg;
+}
+function renderBookings(){
+  const w=ws(),year=w.settings.year,q=bookingFilter.q.toLowerCase();
+  $("bookingYearLabel").textContent="Auswertungsjahr "+year+" · Beträge als interne Netto-/Steuerannahmen";
+  const rows=yearTransactions(year).filter(tx=>(bookingFilter.kind==="all"||tx.kind===bookingFilter.kind)&&(!q||(tx.description+" "+tx.category).toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
+  $("bookingCount").textContent=rows.length+" von "+yearTransactions(year).length+" Buchungen";
+  $("bookingTableBody").innerHTML=rows.length?rows.map(tx=>`<tr><td>${fmtDate(tx.date)}</td><td class="desc-cell">${esc(tx.description)}</td><td>${esc(tx.category)}</td><td>${tx.kind==="income"?"Einnahme":"Ausgabe"}</td><td class="num">${fmtCents(tx.netCents)}</td><td class="num">${tx.vatRate} %</td><td class="num">${fmtCents(txVat(tx))}</td><td class="num">${fmtCents(txGross(tx))}</td><td class="no-print"><button class="btn icon-btn small" data-edit="${esc(tx.id)}" title="Bearbeiten">✎</button> <button class="danger icon-btn small" data-delete="${esc(tx.id)}" title="Löschen">×</button></td></tr>`).join(""):'<tr><td colspan="9" class="empty">Keine passenden Buchungen gefunden.</td></tr>';
+}
+function inVatPeriod(tx,period){
+  if(period==="year")return true;
+  const m=Number(tx.date.slice(5,7));
+  if(period.startsWith("q")){const q=Number(period.slice(1));return m>(q-1)*3&&m<=q*3}
+  return period.startsWith("m")&&m===Number(period.slice(1));
+}
+function vatPeriodName(){
+  const names={year:"Gesamtes Jahr",q1:"1. Quartal",q2:"2. Quartal",q3:"3. Quartal",q4:"4. Quartal",m1:"Januar",m2:"Februar",m3:"März",m4:"April",m5:"Mai",m6:"Juni",m7:"Juli",m8:"August",m9:"September",m10:"Oktober",m11:"November",m12:"Dezember"};
+  return names[vatPeriod]+" "+ws().settings.year;
+}
+function renderVat(){
+  $("vatPeriod").value=vatPeriod;
+  const txs=yearTransactions().filter(tx=>inVatPeriod(tx,vatPeriod)),t=totals(txs);
+  $("vatPeriodLabel").textContent=vatPeriodName();
+  setMetric("vatOutput",t.outputVat);setMetric("vatInput",t.inputVat);setMetric("vatBalance",t.vatBalance);
+  $("vatBalanceHint").textContent=t.vatBalance>=0?"Positive Annahme: mögliche Zahllast":"Negative Annahme: Vorsteuerüberschuss";
+  $("vatRateBody").innerHTML=[19,7,0].map(rate=>{
+    const inc=txs.filter(tx=>tx.kind==="income"&&tx.vatRate===rate),exp=txs.filter(tx=>tx.kind==="expense"&&tx.vatRate===rate);
+    const incomeNet=inc.reduce((s,tx)=>s+tx.netCents,0),expenseNet=exp.reduce((s,tx)=>s+tx.netCents,0);
+    const output=inc.reduce((s,tx)=>s+txVat(tx),0),input=exp.reduce((s,tx)=>s+txVat(tx),0);
+    return `<tr><td>${rate} %</td><td class="num">${fmtCents(incomeNet)}</td><td class="num">${fmtCents(output)}</td><td class="num">${fmtCents(expenseNet)}</td><td class="num">${fmtCents(input)}</td></tr>`;
+  }).join("");
+}
+function tariff(zve,year){
+  const x=Math.floor(Math.max(0,zve));
+  if(year===2024){
+    if(x<=11784)return 0;
+    if(x<=17005){const y=(x-11784)/10000;return Math.floor((954.80*y+1400)*y)}
+    if(x<=66760){const z=(x-17005)/10000;return Math.floor((181.19*z+2397)*z+991.21)}
+    if(x<=277825)return Math.floor(.42*x-10602.13);
+    return Math.floor(.45*x-18936.88);
+  }
+  if(x<=12096)return 0;
+  if(x<=17443){const y=(x-12096)/10000;return Math.floor((932.30*y+1400)*y)}
+  if(x<=68480){const z=(x-17443)/10000;return Math.floor((176.64*z+2397)*z+1015.13)}
+  if(x<=277825)return Math.floor(.42*x-10911.92);
+  return Math.floor(.45*x-19246.67);
+}
+function calculateTax(input){
+  const zve=Math.floor(Math.max(0,input.zve));
+  const est=input.joint?2*tariff(Math.floor(zve/2),input.year):tariff(zve,input.year);
+  const allowance=(input.year===2025?19950:18130)*(input.joint?2:1);
+  const soli=est<=allowance?0:Math.max(0,Math.min(est*.055,(est-allowance)*.119));
+  const church=est*input.churchRate/100,total=est+soli+church;
+  return {est,soli,church,total,balance:input.withheldCents/100-total,average:zve?est/zve*100:0};
+}
+function renderTax(){
+  const t=ws().tax,r=calculateTax(t);
+  $("taxYear").value=t.year;$("taxZve").value=t.zve;$("taxWithheld").value=moneyInput(t.withheldCents);$("taxJoint").checked=t.joint;$("taxChurch").value=t.churchRate;
+  $("taxEst").textContent=fmtEuro(r.est);$("taxSoli").textContent=fmtEuro(r.soli);$("taxChurchResult").textContent=fmtEuro(r.church);$("taxTotal").textContent=fmtEuro(r.total);
+  $("taxAverage").textContent=r.average.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" %";
+  $("taxBalanceLabel").textContent=r.balance>=0?"Mögliche Erstattung, grob":"Mögliche Nachzahlung, grob";
+  $("taxBalance").textContent=(r.balance>=0?"+ ":"− ")+fmtEuro(Math.abs(r.balance));
+  $("taxBalance").className=r.balance>=0?"positive":"negative";
+}
+function categoryRows(txs,kind){
+  const map={};txs.filter(tx=>tx.kind===kind).forEach(tx=>map[tx.category]=(map[tx.category]||0)+tx.netCents);
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+}
+function categoryHtml(rows){
+  return rows.length?rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="num">${fmtCents(r[1])}</td></tr>`).join(""):'<tr><td colspan="2" class="empty">Keine Daten</td></tr>';
+}
+function renderReports(){
+  const w=ws(),txs=yearTransactions(),t=totals(txs);
+  $("reportCompany").textContent=w.settings.company;
+  $("reportMeta").textContent="Interner Bericht für "+w.settings.year+" · Erstellt am "+new Date().toLocaleDateString("de-DE")+" · Unverbindliche Näherung";
+  setMetric("reportIncome",t.incomeNet);setMetric("reportExpense",t.expenseNet);setMetric("reportProfit",t.profit);setMetric("reportVat",t.vatBalance);
+  $("reportIncomeCategories").innerHTML=categoryHtml(categoryRows(txs,"income"));
+  $("reportExpenseCategories").innerHTML=categoryHtml(categoryRows(txs,"expense"));
+}
+function renderUsers(){
+  $("userCount").textContent=state.users.length+" / 16";
+  $("userList").innerHTML=state.users.map(u=>{
+    const active=u.id===state.activeUserId;
+    return `<tr><td class="${active?"user-active":""}">${esc(u.name)}${active?" · aktiv":""}</td><td>${esc(u.role)}</td><td><button class="btn small" data-user-switch="${esc(u.id)}" ${active?"disabled":""}>Wechseln</button> <button class="danger small" data-user-delete="${esc(u.id)}" ${active||state.users.length===1?"disabled":""}>Löschen</button></td></tr>`;
+  }).join("");
+}
+function renderAll(){
+  const w=ws();
+  $("userSelect").innerHTML=state.users.map(u=>`<option value="${esc(u.id)}">${esc(u.name)}</option>`).join("");
+  $("userSelect").value=state.activeUserId;
+  $("topCompany").textContent=w.settings.company;
+  $("settingsCompany").value=w.settings.company;$("settingsYear").value=w.settings.year;
+  $("bookingSearch").value=bookingFilter.q;$("bookingKind").value=bookingFilter.kind;
+  renderDashboard();renderBookings();renderVat();renderTax();renderReports();renderUsers();
+}
+function showView(name){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  $("view-"+name).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.view===name));
+  $("sidebar").classList.remove("open");window.scrollTo({top:0,behavior:"smooth"});
+}
+function openTxModal(id=""){
+  const tx=id?ws().transactions.find(t=>t.id===id):null;
+  $("txModalTitle").textContent=tx?"Buchung bearbeiten":"Neue Buchung";
+  $("txId").value=tx?tx.id:"";
+  $("txDate").value=tx?tx.date:ws().settings.year+"-01-01";
+  $("txKind").value=tx?tx.kind:"income";
+  $("txDescription").value=tx?tx.description:"";
+  $("txCategory").value=tx?tx.category:"";
+  $("txNet").value=tx?moneyInput(tx.netCents):"";
+  $("txVat").value=tx?tx.vatRate:19;
+  $("txModal").classList.add("open");$("txModal").setAttribute("aria-hidden","false");
+  setTimeout(()=>$("txDescription").focus(),50);
+}
+function closeModal(){$("txModal").classList.remove("open");$("txModal").setAttribute("aria-hidden","true")}
+function download(filename,content,type){
+  const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportCSV(){
+  const rows=yearTransactions(),csvCell=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const lines=[["Datum","Art","Beschreibung","Kategorie","Netto EUR","Steuersatz","USt/VSt EUR","Brutto EUR"].map(csvCell).join(";")];
+  rows.sort((a,b)=>a.date.localeCompare(b.date)).forEach(tx=>lines.push([
+    tx.date,tx.kind==="income"?"Einnahme":"Ausgabe",tx.description,tx.category,
+    (tx.netCents/100).toFixed(2).replace(".",","),tx.vatRate+" %",(txVat(tx)/100).toFixed(2).replace(".",","),(txGross(tx)/100).toFixed(2).replace(".",",")
+  ].map(csvCell).join(";")));
+  download("buchungen-"+ws().settings.year+".csv","\uFEFF"+lines.join("\r\n"),"text/csv;charset=utf-8");
+  toast("CSV-Datei wurde erstellt.");
+}
+function exportBackup(){
+  const payload={app:"SteuerPilot Intern",version:1,exportedAt:new Date().toISOString(),state};
+  download("steuerpilot-backup-"+new Date().toISOString().slice(0,10)+".json",JSON.stringify(payload,null,2),"application/json");
+  toast("Backup wurde exportiert.");
+}
+function clearWorkspace(){
+  if(!confirm("Den aktiven Arbeitsbereich wirklich vollständig leeren?"))return;
+  const old=ws(),fresh=newWorkspace(false);
+  fresh.settings.company=old.settings.company;fresh.settings.year=old.settings.year;
+  state.workspaces[state.activeUserId]=fresh;saveState();renderAll();toast("Arbeitsbereich wurde geleert.");
+}
+function loadDemo(){
+  if(ws().transactions.length&&!confirm("Vorhandene Buchungen durch Demo-Daten ersetzen?"))return;
+  state.workspaces[state.activeUserId]=newWorkspace(true);saveState();renderAll();toast("Demo-Daten wurden geladen.");
+}
+
+document.addEventListener("click",event=>{
+  const btn=event.target.closest("button");if(!btn)return;
+  if(btn.dataset.view){showView(btn.dataset.view);return}
+  if(btn.dataset.edit){openTxModal(btn.dataset.edit);return}
+  if(btn.dataset.delete){
+    const tx=ws().transactions.find(t=>t.id===btn.dataset.delete);
+    if(tx&&confirm("Buchung „"+tx.description+"“ wirklich löschen?")){ws().transactions=ws().transactions.filter(t=>t.id!==tx.id);saveState();renderAll();toast("Buchung gelöscht.")}
+    return;
+  }
+  if(btn.dataset.userSwitch){state.activeUserId=btn.dataset.userSwitch;bookingFilter={q:"",kind:"all"};saveState();renderAll();toast("Profil gewechselt.");return}
+  if(btn.dataset.userDelete){
+    const id=btn.dataset.userDelete,u=state.users.find(x=>x.id===id);
+    if(id!==state.activeUserId&&u&&confirm("Profil „"+u.name+"“ und dessen Daten löschen?")){state.users=state.users.filter(x=>x.id!==id);delete state.workspaces[id];saveState();renderAll();toast("Profil gelöscht.")}
+    return;
+  }
+  switch(btn.dataset.action){
+    case"new-tx":openTxModal();break;
+    case"close-modal":closeModal();break;
+    case"export-csv":exportCSV();break;
+    case"export-backup":exportBackup();break;
+    case"import-backup":$("importFile").click();break;
+    case"print":showView("reports");setTimeout(()=>window.print(),100);break;
+    case"load-demo":loadDemo();break;
+    case"clear-workspace":case"clear-demo":clearWorkspace();break;
+  }
+});
+
+$("menuBtn").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
+$("userSelect").addEventListener("change",e=>{state.activeUserId=e.target.value;bookingFilter={q:"",kind:"all"};saveState();renderAll()});
+$("bookingSearch").addEventListener("input",e=>{bookingFilter.q=e.target.value;renderBookings()});
+$("bookingKind").addEventListener("change",e=>{bookingFilter.kind=e.target.value;renderBookings()});
+$("vatPeriod").addEventListener("change",e=>{vatPeriod=e.target.value;renderVat()});
+
+$("txForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const net=parseMoney($("txNet").value);
+  if(!Number.isFinite(net)||net<=0){toast("Bitte einen gültigen Nettobetrag größer null eingeben.");return}
+  const id=$("txId").value;
+  const tx={id:id||uid(),date:$("txDate").value,kind:$("txKind").value==="expense"?"expense":"income",description:$("txDescription").value.trim(),category:$("txCategory").value.trim(),netCents:net,vatRate:Number($("txVat").value)};
+  if(!tx.date||!tx.description||!tx.category){toast("Bitte alle Pflichtfelder ausfüllen.");return}
+  if(id){const index=ws().transactions.findIndex(t=>t.id===id);if(index>=0)ws().transactions[index]=tx}
+  else ws().transactions.push(tx);
+  saveState();renderAll();closeModal();toast("Buchung gespeichert.");
+});
+$("settingsForm").addEventListener("submit",e=>{
+  e.preventDefault();const w=ws();
+  w.settings.company=$("settingsCompany").value.trim();w.settings.year=clampInt($("settingsYear").value,2000,2100,2025);
+  saveState();renderAll();toast("Einstellungen gespeichert.");
+});
+$("taxForm").addEventListener("submit",e=>{
+  e.preventDefault();const withheld=parseMoney($("taxWithheld").value);
+  if(!Number.isFinite(withheld)||withheld<0){toast("Bitte einen gültigen Steuerbetrag eingeben.");return}
+  ws().tax={year:Number($("taxYear").value),zve:clampInt($("taxZve").value,0,1000000000,0),joint:$("taxJoint").checked,withheldCents:withheld,churchRate:Number($("taxChurch").value)};
+  saveState();renderTax();toast("Steuer-Schätzung aktualisiert.");
+});
+$("addUserForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(state.users.length>=16){toast("Maximal 16 lokale Profile sind zulässig.");return}
+  const name=$("newUserName").value.trim();if(!name)return;
+  const id=uid();state.users.push({id,name,role:$("newUserRole").value});state.workspaces[id]=newWorkspace(false);
+  $("newUserName").value="";saveState();renderAll();toast("Profil angelegt.");
+});
+$("importFile").addEventListener("change",async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const parsed=JSON.parse(await file.text()),imported=normalizeState(parsed.state||parsed);
+    if(!confirm("Das Backup importieren und den aktuellen lokalen Datenbestand ersetzen?"))return;
+    state=imported;bookingFilter={q:"",kind:"all"};saveState();renderAll();toast("Backup erfolgreich importiert.");
+  }catch(err){toast("Import fehlgeschlagen: ungültige oder nicht unterstützte Datei.")}
+  finally{e.target.value=""}
+});
+$("txModal").addEventListener("click",e=>{if(e.target===$("txModal"))closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+
+saveState();
+renderAll();
+</script>
+</body>
+</html>
